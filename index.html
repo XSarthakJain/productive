@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Board</title>
+    <title>Task Board (Local Storage)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        
+        /* Use a clean, modern font */
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -18,30 +18,45 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-50 text-gray-800">
 
-    <div class="container max-w-4xl mx-auto p-4 sm:p-8">
+    <div class="container max-w-5xl mx-auto p-4 sm:p-8">
         
-        <!-- App Header -->
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-900">My Task Board</h1>
-            <p class="text-lg text-gray-600">Organize your life, one task at a time.</p>
+        <!-- App Header (Enhanced Style) -->
+        <header class="mb-10 p-4 rounded-xl">
+            <h1 class="text-5xl font-extrabold text-indigo-800">My Task Board</h1>
+            <p class="text-xl text-gray-500 mt-1">Organize your life, one rupee and one task at a time.</p>
+            
+            <!-- Connection Status & Info (Lighter Accent) -->
+            <div class="flex justify-between items-center mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+                <p id="user-id-display" class="text-xs text-blue-700 font-mono font-semibold">
+                    Data Source: Local Browser Storage
+                </p>
+                <div class="flex items-center gap-4">
+                    <!-- NEW DOWNLOAD BUTTON -->
+                    <button id="download-data-btn" class="px-3 py-1 text-sm bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition duration-200 shadow-md flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Download Backup
+                    </button>
+                    <div id="status-message" class="text-sm font-medium text-blue-600">Ready</div>
+                </div>
+            </div>
         </header>
 
-        <!-- Add New Category Form -->
-        <section class="mb-8 p-6 bg-white rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold mb-4">Create New Category</h2>
+        <!-- Add New Category Form (Enhanced Card Style) -->
+        <section class="mb-10 p-6 bg-white rounded-2xl shadow-xl border border-gray-200">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Create New Category</h2>
             <form id="add-category-form" class="flex flex-col sm:flex-row gap-4">
                 <input 
                     type="text" 
                     id="new-category-name" 
                     placeholder="e.g., Work, Home, Project..." 
-                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="flex-grow p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-200 transition duration-200"
                     required
                 >
                 <button 
                     type="submit" 
-                    class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200"
+                    class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-75 transition duration-200 transform hover:scale-[1.02]"
                 >
                     Add Category
                 </button>
@@ -56,8 +71,8 @@
     </div>
 
     <!-- Custom Modal for Confirmations (replaces alert()) -->
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full transform transition duration-300 scale-100">
             <h3 class="text-xl font-semibold mb-4" id="modal-title">Are you sure?</h3>
             <p class="text-gray-700 mb-6" id="modal-message">This action cannot be undone.</p>
             <div class="flex justify-end gap-4">
@@ -69,233 +84,511 @@
                 </button>
                 <button 
                     id="modal-confirm-btn"
-                    class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition duration-200"
+                    class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-200"
                 >
                     Confirm
                 </button>
             </div>
         </div>
     </div>
+    
+    <!-- Custom Modal for Editing Tasks (NEW) -->
+    <div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full transform transition duration-300 scale-100">
+            <h3 class="text-2xl font-semibold mb-4 text-indigo-800">Edit Task</h3>
+            <form id="edit-task-form">
+                <!-- Hidden inputs to store IDs -->
+                <input type="hidden" id="edit-category-id">
+                <input type="hidden" id="edit-task-id">
+
+                <div class="space-y-4">
+                    <label class="block">
+                        <span class="text-sm font-medium text-gray-700">Description</span>
+                        <input 
+                            type="text" 
+                            id="edit-task-text" 
+                            class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required
+                        >
+                    </label>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="block">
+                            <span class="text-sm font-medium text-gray-700">Price (₹)</span>
+                            <input
+                                type="number"
+                                id="edit-task-price"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                        </label>
+                        <label class="block">
+                            <span class="text-sm font-medium text-gray-700">Due Date</span>
+                            <input 
+                                type="date" 
+                                id="edit-task-date"
+                                class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                        </label>
+                    </div>
+
+                    <label class="block">
+                        <span class="text-sm font-medium text-gray-700">Priority</span>
+                        <select 
+                            id="edit-task-priority"
+                            class="mt-1 block w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="0">High Priority</option>
+                            <option value="1">Medium Priority</option>
+                            <option value="2">Low Priority</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-4 mt-6">
+                    <button 
+                        type="button" 
+                        id="edit-modal-cancel-btn"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition duration-200"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit"
+                        class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg shadow-md hover:bg-indigo-700 transition duration-200"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
-    <!-- Main Application Logic -->
+    <!-- Main Application Logic - Using Local Storage -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        
+        const STORAGE_KEY = 'taskBoardCategories_v2'; // Key for localStorage
+        let categories = [];
+        let categoryFilters = {}; 
 
-            // --- STATE & STORAGE ---
-            const DB_KEY = 'taskBoardAppDB';
-            let state = {
-                categories: [],
-                categoryFilters: {} // <-- ADD THIS to store filter state per category
-            };
+        // Get DOM Elements
+        const categoryListContainer = document.getElementById('category-list-container');
+        const addCategoryForm = document.getElementById('add-category-form');
+        const newCategoryNameInput = document.getElementById('new-category-name');
+        const modal = document.getElementById('confirmation-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        let modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const statusMessage = document.getElementById('status-message');
+        const downloadDataBtn = document.getElementById('download-data-btn'); // NEW ELEMENT
 
-            // Get DOM Elements
-            const categoryListContainer = document.getElementById('category-list-container');
-            const addCategoryForm = document.getElementById('add-category-form');
-            const newCategoryNameInput = document.getElementById('new-category-name');
-            const modal = document.getElementById('confirmation-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalMessage = document.getElementById('modal-message');
-            const modalCancelBtn = document.getElementById('modal-cancel-btn');
-            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        // New Edit Modal Elements
+        const editModal = document.getElementById('edit-task-modal');
+        const editTaskForm = document.getElementById('edit-task-form');
+        const editModalCancelBtn = document.getElementById('edit-modal-cancel-btn');
+        const editCategoryIdInput = document.getElementById('edit-category-id');
+        const editTaskIdInput = document.getElementById('edit-task-id');
+        const editTaskTextInput = document.getElementById('edit-task-text');
+        const editTaskPriceInput = document.getElementById('edit-task-price');
+        const editTaskDateInput = document.getElementById('edit-task-date');
+        const editTaskPrioritySelect = document.getElementById('edit-task-priority');
+
+        let onConfirmCallback = null;
+
+        /**
+         * Generate a unique ID
+         */
+        function generateId() {
+            return 'id-' + Date.now() + Math.random().toString(16).slice(2);
+        }
+
+        // --- LOCAL STORAGE PERSISTENCE ---
+
+        /**
+         * Loads data from Local Storage.
+         */
+        function loadCategories() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    // Load the categories and ensure nested arrays are initialized
+                    categories = JSON.parse(storedData).map(c => ({
+                        ...c,
+                        tasks: c.tasks || [],
+                        completedTasks: c.completedTasks || [],
+                        isCollapsed: typeof c.isCollapsed === 'boolean' ? c.isCollapsed : false,
+                        isHistoryCollapsed: typeof c.isHistoryCollapsed === 'boolean' ? c.isHistoryCollapsed : true,
+                    }));
+                } else {
+                    categories = [];
+                }
+            } catch (error) {
+                console.error("Error loading from localStorage:", error);
+                categories = [];
+            }
+        }
+
+        /**
+         * Saves data to Local Storage.
+         */
+        function saveCategories() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
+                statusMessage.textContent = "Data Saved!";
+            } catch (error) {
+                console.error("Error saving to localStorage:", error);
+                statusMessage.textContent = "Save Error!";
+            }
+            // Clear status message after a short delay
+            setTimeout(() => statusMessage.textContent = "Ready", 1500);
+        }
+
+        // --- DOWNLOAD FUNCTIONALITY (NEW) ---
+        
+        /**
+         * Downloads the current task data as a JSON file.
+         */
+        function downloadDataAsJson() {
+            const dataToSave = JSON.stringify(categories, null, 2); // null, 2 for pretty print
+            const blob = new Blob([dataToSave], { type: 'application/json' });
             
-            let onConfirmCallback = null;
+            const now = new Date();
+            const dateString = now.getFullYear() + 
+                               '-' + String(now.getMonth() + 1).padStart(2, '0') + 
+                               '-' + String(now.getDate()).padStart(2, '0');
+            const fileName = `taskboard_backup_${dateString}.json`;
 
-            /**
-             * Load state from Local Storage
-             */
-            function loadState() {
-                const data = localStorage.getItem(DB_KEY);
-                if (data) {
-                    state = JSON.parse(data);
-                    // Ensure categoryFilters exists, even if loading old data
-                    if (!state.categoryFilters) {
-                        state.categoryFilters = {};
-                    }
+            // Create a temporary link element
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            
+            // Append to body, trigger click, and remove
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            statusMessage.textContent = "Backup Downloaded!";
+            setTimeout(() => statusMessage.textContent = "Ready", 2500);
+        }
+
+        // --- CONFIRMATION MODAL LOGIC (for delete/complete) ---
+
+        function showModal(title, message, onConfirm) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            onConfirmCallback = onConfirm; 
+
+            const newConfirmBtn = modalConfirmBtn.cloneNode(true);
+            modalConfirmBtn.parentNode.replaceChild(newConfirmBtn, modalConfirmBtn);
+            modalConfirmBtn = newConfirmBtn;
+
+            modalConfirmBtn.addEventListener('click', () => {
+                if (onConfirmCallback) {
+                    onConfirmCallback();
+                }
+                hideModal();
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            onConfirmCallback = null;
+            modal.classList.add('hidden');
+        }
+        
+        modalCancelBtn.addEventListener('click', hideModal);
+
+        // --- EDIT TASK MODAL LOGIC ---
+
+        /**
+         * Finds a task by ID across all categories.
+         */
+        function findTask(taskId) {
+            for (const category of categories) {
+                const task = category.tasks.find(t => t.id === taskId);
+                if (task) {
+                    return { task, categoryId: category.id };
                 }
             }
+            return null;
+        }
 
-            /**
-             * Save state to Local Storage
-             */
-            function saveState() {
-                localStorage.setItem(DB_KEY, JSON.stringify(state));
+        /**
+         * Shows the Edit Task Modal, pre-populating with task data.
+         */
+        function showEditModal(task, categoryId) {
+            // Populate hidden IDs
+            editCategoryIdInput.value = categoryId;
+            editTaskIdInput.value = task.id;
+
+            // Populate form fields
+            editTaskTextInput.value = task.text;
+            editTaskPriceInput.value = task.price || ''; 
+            editTaskDateInput.value = task.date || '';
+            editTaskPrioritySelect.value = task.priority;
+
+            editModal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the Edit Task Modal.
+         */
+        function hideEditModal() {
+            editModal.classList.add('hidden');
+        }
+
+        /**
+         * Handles the submission of the Edit Task form.
+         */
+        function handleEditTaskSubmit(e) {
+            e.preventDefault();
+
+            const categoryId = editCategoryIdInput.value;
+            const taskId = editTaskIdInput.value;
+
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            const task = category.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            // Update the task properties
+            const newText = editTaskTextInput.value.trim();
+            if (!newText) {
+                // Should not happen if 'required' is respected, but as a safeguard
+                // Note: We avoid using alert() per instructions
+                console.error("Task description cannot be empty."); 
+                return;
             }
 
-            /**
-             * Generate a unique ID
-             */
-            function generateId() {
-                return 'id-' + Date.now() + Math.random().toString(16).slice(2);
+            task.text = newText;
+            task.price = editTaskPriceInput.value;
+            task.date = editTaskDateInput.value;
+            task.priority = editTaskPrioritySelect.value;
+            
+            saveCategories();
+            hideEditModal();
+            renderApp();
+        }
+
+        editModalCancelBtn.addEventListener('click', hideEditModal);
+        editTaskForm.addEventListener('submit', handleEditTaskSubmit);
+
+        // --- RENDERING ---
+
+        function getPriorityStyles(priority) {
+            switch (priority) {
+                case '0': // High (More intense red)
+                    return {
+                        cardClasses: 'bg-red-50 border-l-4 border-red-600 hover:shadow-lg',
+                        badgeClasses: 'bg-red-200 text-red-800',
+                        badgeText: 'High'
+                    };
+                case '1': // Medium (A warmer yellow/orange)
+                    return {
+                        cardClasses: 'bg-amber-50 border-l-4 border-amber-500 hover:shadow-lg',
+                        badgeClasses: 'bg-amber-200 text-amber-800',
+                        badgeText: 'Medium'
+                    };
+                case '2': // Low (A calm green)
+                    return {
+                        cardClasses: 'bg-emerald-50 border-l-4 border-emerald-500 hover:shadow-lg',
+                        badgeClasses: 'bg-emerald-200 text-emerald-800',
+                        badgeText: 'Low'
+                    };
+                default:
+                    return {
+                        cardClasses: 'bg-gray-50 border-l-4 border-gray-400 hover:shadow-lg',
+                        badgeClasses: 'bg-gray-200 text-gray-800',
+                        badgeText: 'None'
+                    };
             }
+        }
+        
+        function createCompletedTaskElement(task) {
+            const taskEl = document.createElement('div');
+            const priceValue = parseFloat(task.price);
+            // Changed currency symbol to Indian Rupee (₹)
+            const priceDisplay = (task.price && !isNaN(priceValue)) 
+                ? `<span class="font-bold text-gray-800">₹${priceValue.toFixed(2)}</span>` 
+                : '<span class="text-gray-400">N/A</span>';
 
-            // --- MODAL LOGIC ---
+            taskEl.className = 'flex flex-col sm:flex-row justify-between items-center p-3 my-1 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200 transition duration-150';
+            taskEl.innerHTML = `
+                <p class="text-sm text-gray-700 flex-grow mr-4">${task.text}</p>
+                <div class="flex items-center gap-4 text-xs mt-1 sm:mt-0 sm:ml-4 flex-shrink-0">
+                    <span class="text-gray-500">Completed: ${task.date || 'N/A'}</span>
+                    <span class="text-sm font-semibold">
+                        Price: ${priceDisplay}
+                    </span>
+                </div>
+            `;
+            return taskEl;
+        }
 
-            /**
-             * Show a confirmation modal
-             * @param {string} title - The title for the modal
-             * @param {string} message - The confirmation message
-             * @param {function} onConfirm - Callback function to run on confirmation
-             */
-            function showModal(title, message, onConfirm) {
-                modalTitle.textContent = title;
-                modalMessage.textContent = message;
-                onConfirmCallback = onConfirm; // Store the callback
+        function createTaskElement(task) {
+            const taskEl = document.createElement('div');
+            taskEl.dataset.taskId = task.id;
+            
+            const styles = getPriorityStyles(task.priority);
+            
+            const priceValue = parseFloat(task.price);
+            // Changed currency symbol to Indian Rupee (₹)
+            const priceDisplay = (task.price && !isNaN(priceValue)) 
+                ? `<span class="font-bold text-indigo-700">₹${priceValue.toFixed(2)}</span>` 
+                : '';
+            
+            const infoRow = (task.date || priceDisplay)
+                ? `<div class="text-sm text-gray-600 flex flex-wrap gap-x-4 mt-1">
+                        ${task.date ? `<span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>Due: ${task.date}</span>` : ''}
+                        ${priceDisplay ? `<span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 10v2" /><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V6a4 4 0 00-8 0v5h8z" /></svg>Price: ${priceDisplay}</span>` : ''}
+                    </div>`
+                : '';
 
-                // Clean up previous listeners to avoid duplicates
-                const newConfirmBtn = modalConfirmBtn.cloneNode(true);
-                modalConfirmBtn.parentNode.replaceChild(newConfirmBtn, modalConfirmBtn);
-                newConfirmBtn.textContent = "Confirm"; // Reset text
-                
-                // Add the new listener
-                newConfirmBtn.addEventListener('click', () => {
-                    if (onConfirmCallback) {
-                        onConfirmCallback();
-                    }
-                    hideModal();
-                });
+            taskEl.className = `flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl my-4 transition duration-300 transform hover:scale-[1.005] ${styles.cardClasses}`;
+            
+            taskEl.innerHTML = `
+                <div class="flex-grow mb-2 sm:mb-0">
+                    <p class="font-bold text-lg text-gray-900">${task.text}</p>
+                    ${infoRow}
+                </div>
+                <div class="flex items-center gap-4 flex-shrink-0">
+                    <span 
+                        class="text-xs font-semibold px-3 py-1 rounded-full ${styles.badgeClasses} shadow-sm"
+                    >
+                        ${styles.badgeText}
+                    </span>
+                    <!-- NEW EDIT BUTTON -->
+                    <button 
+                        class="edit-task-btn text-gray-400 hover:text-blue-600 transition duration-200 p-2 rounded-full hover:bg-white/50"
+                        title="Edit Task"
+                        data-task-id-to-edit="${task.id}" 
+                    >
+                        <!-- Edit icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                    <!-- END NEW EDIT BUTTON -->
 
-                modal.classList.remove('hidden');
-            }
+                    <button 
+                        class="complete-task-btn text-gray-400 hover:text-green-600 transition duration-200 p-2 rounded-full hover:bg-white/50"
+                        title="Mark as Completed"
+                        data-task-id-to-complete="${task.id}" 
+                    >
+                        <!-- Checkmark icon for completion -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+            return taskEl;
+        }
 
-            /**
-             * Hide the confirmation modal
-             */
-            function hideModal() {
-                onConfirmCallback = null;
-                modal.classList.add('hidden');
-            }
 
-            // --- RENDERING ---
+        function createCategoryElement(category) {
+            const categoryEl = document.createElement('section');
+            categoryEl.dataset.categoryId = category.id;
+            // Enhanced Category Card Styling
+            categoryEl.className = 'mb-12 p-6 bg-white rounded-3xl shadow-2xl border border-gray-100 transition duration-300';
 
-            /**
-             * Get Tailwind classes based on priority
-             * @param {string} priority - Priority value ("0", "1", "2")
-             * @returns {object} - { cardClasses: string, badgeClasses: string, badgeText: string }
-             */
-            function getPriorityStyles(priority) {
-                switch (priority) {
-                    case '0': // High
-                        return {
-                            cardClasses: 'bg-red-50 border-l-4 border-red-500',
-                            badgeClasses: 'bg-red-200 text-red-800',
-                            badgeText: 'High'
-                        };
-                    case '1': // Medium
-                        return {
-                            cardClasses: 'bg-yellow-50 border-l-4 border-yellow-500',
-                            badgeClasses: 'bg-yellow-200 text-yellow-800',
-                            badgeText: 'Medium'
-                        };
-                    case '2': // Low
-                        return {
-                            cardClasses: 'bg-green-50 border-l-4 border-green-500',
-                            badgeClasses: 'bg-green-200 text-green-800',
-                            badgeText: 'Low'
-                        };
-                    default:
-                        return {
-                            cardClasses: 'bg-gray-50 border-l-4 border-gray-400',
-                            badgeClasses: 'bg-gray-200 text-gray-800',
-                            badgeText: 'None'
-                        };
-                }
-            }
+            // --- ACCORDION LOGIC for Active Tasks ---
+            const contentVisibilityClass = category.isCollapsed ? 'hidden' : '';
+            
+            // Added pointer-events-none class to SVG for better click delegation
+            const caretIconClass = "h-6 w-6 transform transition duration-300 text-indigo-500 pointer-events-none"; 
+            const caretIcon = category.isCollapsed ? 
+                // Down caret (collapsed)
+                `<svg xmlns="http://www.w3.org/2000/svg" class="${caretIconClass}" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>` 
+                : 
+                // Up caret (expanded)
+                `<svg xmlns="http://www.w3.org/2000/svg" class="${caretIconClass} rotate-180" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`;
 
-            /**
-             * Create an HTML element for a single task
-             * @param {object} task - The task object
-             * @returns {HTMLElement} - The task card element
-             */
-            function createTaskElement(task) {
-                const taskEl = document.createElement('div');
-                taskEl.dataset.taskId = task.id;
-                
-                const styles = getPriorityStyles(task.priority);
-                
-                taskEl.className = `flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg my-2 shadow-sm ${styles.cardClasses}`;
-                
-                taskEl.innerHTML = `
-                    <div class="flex-grow mb-2 sm:mb-0">
-                        <p class="font-medium text-gray-900">${task.text}</p>
-                        ${task.date ? `<p class="text-sm text-gray-600">Due: ${task.date}</p>` : ''}
+            // --- HISTORY LOGIC ---
+            const completedTasks = category.completedTasks || [];
+            const totalExpense = completedTasks.reduce((sum, task) => {
+                const price = parseFloat(task.price);
+                return sum + (isNaN(price) ? 0 : price);
+            }, 0);
+            // Changed currency symbol to Indian Rupee (₹)
+            const totalExpenseDisplay = `₹${totalExpense.toFixed(2)}`;
+
+            const historyContentVisibilityClass = category.isHistoryCollapsed ? 'hidden' : '';
+            const historyCaretIcon = category.isHistoryCollapsed ? 
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>` 
+                : 
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-180 transition duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`;
+
+
+            categoryEl.innerHTML = `
+                <!-- Category Header: Toggle area is separate from delete button -->
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3 cursor-pointer toggle-collapse-btn p-1 rounded-lg hover:bg-gray-100 transition duration-200" data-category-id-toggle="${category.id}">
+                        ${caretIcon}
+                        <!-- Added pointer-events-none here to ensure clicks hit the parent div -->
+                        <h2 class="text-3xl font-bold text-gray-900 pointer-events-none">${category.name}</h2>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span 
-                            class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${styles.badgeClasses}"
-                        >
-                            ${styles.badgeText}
-                        </span>
-                        <button 
-                            class="delete-task-btn text-gray-400 hover:text-red-600 transition duration-200"
-                            title="Delete Task"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                return taskEl;
-            }
+                    <button 
+                        class="delete-category-btn text-gray-400 hover:text-red-600 transition duration-200 p-2 rounded-full hover:bg-red-50"
+                        title="Delete Category"
+                    >
+                        <!-- Trashcan icon for deletion -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
 
-            /**
-             * Create an HTML element for a category and its tasks
-             * @param {object} category - The category object
-             * @returns {HTMLElement} - The category card element
-             */
-            function createCategoryElement(category) {
-                const categoryEl = document.createElement('section');
-                categoryEl.dataset.categoryId = category.id;
-                categoryEl.className = 'mb-8 p-6 bg-white rounded-lg shadow-md';
-
-                categoryEl.innerHTML = `
-                    <!-- Category Header -->
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-semibold">${category.name}</h2>
-                        <button 
-                            class="delete-category-btn text-gray-400 hover:text-red-600 transition duration-200 p-1 rounded-full"
-                            title="Delete Category"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Add New Task Form (for this category) -->
-                    <form class="add-task-form mb-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <!-- Collapsible Content Wrapper (Active Tasks) -->
+                <div class="category-content ${contentVisibilityClass}">
+                    <!-- Add New Task Form -->
+                    <form class="add-task-form mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
                         <input 
                             type="text" 
                             name="taskText"
                             placeholder="New task description..." 
-                            class="sm:col-span-2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="sm:col-span-2 md:col-span-2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                             required
+                        >
+                        <input
+                            type="number"
+                            name="taskPrice"
+                            placeholder="Price (₹)"
+                            min="0"
+                            step="0.01"
+                            class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                         >
                         <select 
                             name="taskPriority"
-                            class="p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                         >
-                            <option value="0">High Priority</option>
-                            <option value="1">Medium Priority</option>
-                            <option value="2" selected>Low Priority</option>
+                            <option value="0">High Priority (0)</option>
+                            <option value="1">Medium Priority (1)</option>
+                            <option value="2" selected>Low Priority (2)</option>
                         </select>
                         <input 
                             type="date" 
                             name="taskDate"
-                            class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                         >
                         <button 
                             type="submit" 
-                            class="sm:col-span-4 p-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200"
+                            class="sm:col-span-2 md:col-span-5 p-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-500 focus:ring-opacity-75 transition duration-200 transform hover:scale-[1.01]"
                         >
                             Add Task
                         </button>
                     </form>
 
                     <!-- Filter & Task List Header -->
-                    <div class="flex justify-between items-center mb-2 mt-4">
-                        <h3 class="text-lg font-semibold text-gray-800">Tasks</h3>
+                    <div class="flex justify-between items-center mb-3 mt-4">
+                        <h3 class="text-xl font-semibold text-gray-800">Active Tasks</h3>
                         <div class="flex items-center gap-2">
                             <label for="priority-filter-${category.id}" class="text-sm font-medium text-gray-700">Filter:</label>
                             <select 
@@ -313,210 +606,334 @@
                     </div>
 
                     <!-- Task List Container -->
-                    <div class="task-list-container">
+                    <div class="task-list-container mb-6">
                         <!-- Tasks will be injected here -->
                     </div>
-                `;
+                    
+                    <hr class="my-6 border-gray-200"/>
 
-                // Add tasks to the task list container (with sorting and filtering)
-                const taskListContainer = categoryEl.querySelector('.task-list-container');
-                const currentFilter = state.categoryFilters[category.id] || 'all';
-
-                // 1. Sort by priority (0 -> 2)
-                // We make a copy with [...category.tasks] to avoid changing the original array
-                let tasksToRender = [...category.tasks].sort((a, b) => a.priority - b.priority);
-
-                // 2. Filter if needed
-                if (currentFilter !== 'all') {
-                    tasksToRender = tasksToRender.filter(task => task.priority === currentFilter);
-                }
-
-                // 3. Render tasks
-                if (tasksToRender.length > 0) {
-                    tasksToRender.forEach(task => {
-                        taskListContainer.appendChild(createTaskElement(task));
-                    });
-                } else if (category.tasks.length === 0) {
-                    taskListContainer.innerHTML = `<p class="text-gray-500 italic">No tasks yet.</p>`;
-                } else {
-                    taskListContainer.innerHTML = `<p class="text-gray-500 italic">No tasks match the filter.</p>`;
-                }
-                
-                // Set the filter dropdown to the saved value
-                const filterSelect = categoryEl.querySelector(`#priority-filter-${category.id}`);
-                if (filterSelect) {
-                    filterSelect.value = currentFilter;
-                }
-
-                return categoryEl;
-            }
-
-            /**
-             * Master render function. Clears and re-renders the entire app state.
-             */
-            function renderApp() {
-                // Clear the main container
-                categoryListContainer.innerHTML = '';
-                
-                // Render each category
-                if (state.categories.length > 0) {
-                    state.categories.forEach(category => {
-                        categoryListContainer.appendChild(createCategoryElement(category));
-                    });
-                } else {
-                    categoryListContainer.innerHTML = `
-                        <div class="text-center p-10 bg-white rounded-lg shadow-md">
-                            <p class="text-xl text-gray-600">No categories found.</p>
-                            <p class="text-gray-500">Why not create one above?</p>
+                    <!-- History Section Header (Accent Style) -->
+                    <div 
+                        class="flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer history-toggle-btn p-4 bg-indigo-50 border-l-4 border-indigo-400 hover:bg-indigo-100 rounded-r-lg transition duration-200 shadow-inner" 
+                        data-category-id-history="${category.id}"
+                    >
+                        <div class="flex items-center gap-2">
+                            ${historyCaretIcon}
+                            <h3 class="text-lg font-semibold text-indigo-800">Completion History (${completedTasks.length} tasks)</h3>
                         </div>
-                    `;
-                }
+                        <span class="text-lg font-extrabold text-indigo-900 mt-1 sm:mt-0">
+                            Total Expense: ${totalExpenseDisplay}
+                        </span>
+                    </div>
+
+                    <!-- History List Container (NEW) -->
+                    <div class="history-content p-2 ${historyContentVisibilityClass}">
+                        <div class="history-list-container mt-4 space-y-2">
+                            <!-- Completed Tasks will be injected here -->
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            const taskListContainer = categoryEl.querySelector('.task-list-container');
+            const currentFilter = categoryFilters[category.id] || 'all';
+
+            // 1. Sort by priority (0 -> 2)
+            let tasksToRender = [...(category.tasks || [])].sort((a, b) => {
+                return parseInt(a.priority) - parseInt(b.priority);
+            });
+
+            // 2. Filter if needed
+            if (currentFilter !== 'all') {
+                tasksToRender = tasksToRender.filter(task => task.priority === currentFilter);
             }
 
-
-            // --- EVENT HANDLERS & LOGIC ---
-
-            /**
-             * Handle Add Category form submission
-             */
-            function handleAddCategory(e) {
-                e.preventDefault();
-                const categoryName = newCategoryNameInput.value.trim();
-                
-                if (categoryName) {
-                    const newCategory = {
-                        id: generateId(),
-                        name: categoryName,
-                        tasks: []
-                    };
-                    state.categories.push(newCategory);
-                    saveState();
-                    renderApp(); // Re-render the whole app
-                    newCategoryNameInput.value = '';
-                }
-            }
-
-            /**
-             * Handle Add Task form submission (uses event delegation)
-             */
-            function handleAddTask(e) {
-                e.preventDefault();
-                
-                const form = e.target;
-                const categoryEl = form.closest('[data-category-id]');
-                const categoryId = categoryEl.dataset.categoryId;
-                
-                // Get form data
-                const taskText = form.elements.taskText.value.trim();
-                const taskPriority = form.elements.taskPriority.value;
-                const taskDate = form.elements.taskDate.value;
-
-                if (taskText) {
-                    const newTask = {
-                        id: generateId(),
-                        text: taskText,
-                        priority: taskPriority,
-                        date: taskDate
-                    };
-
-                    // Find the category in state and add the task
-                    const category = state.categories.find(c => c.id === categoryId);
-                    if (category) {
-                        category.tasks.push(newTask);
-                        saveState();
-                        renderApp(); // Re-render (easiest way to update)
-                    }
-                }
+            // 3. Render active tasks
+            if (tasksToRender.length > 0) {
+                tasksToRender.forEach(task => {
+                    taskListContainer.appendChild(createTaskElement(task));
+                });
+            } else if ((category.tasks || []).length === 0) {
+                taskListContainer.innerHTML = `<p class="text-gray-500 italic p-2 text-center border-2 border-dashed border-gray-300 rounded-lg mt-4">No active tasks yet. Time to get started!</p>`;
+            } else {
+                taskListContainer.innerHTML = `<p class="text-gray-500 italic p-2 text-center border-2 border-dashed border-gray-300 rounded-lg mt-4">No active tasks match the filter.</p>`;
             }
             
-            /**
-             * Handle clicks on delete buttons (uses event delegation)
-             */
-            function handleDeleteClick(e) {
-                const deleteCategoryBtn = e.target.closest('.delete-category-btn');
-                const deleteTaskBtn = e.target.closest('.delete-task-btn');
+            // 4. Render completed tasks (History)
+            const historyListContainer = categoryEl.querySelector('.history-list-container');
+            if (completedTasks.length > 0) {
+                [...completedTasks].sort((a, b) => {
+                    // Sort by completion time (descending)
+                    return b.id.localeCompare(a.id);
+                }).forEach(task => {
+                    historyListContainer.appendChild(createCompletedTaskElement(task));
+                });
+            } else {
+                historyListContainer.innerHTML = `<p class="text-gray-500 italic p-2 text-sm text-center">No tasks completed yet. Finish a task to see it here!</p>`;
+            }
 
-                if (deleteCategoryBtn) {
-                    const categoryEl = deleteCategoryBtn.closest('[data-category-id]');
-                    const categoryId = categoryEl.dataset.categoryId;
-                    const category = state.categories.find(c => c.id === categoryId);
-                    
-                    showModal(
-                        `Delete Category: ${category.name}`,
-                        `Are you sure you want to delete this category and all its tasks? This action cannot be undone.`,
-                        () => {
-                            // On confirm:
-                            state.categories = state.categories.filter(c => c.id !== categoryId);
-                            saveState();
+            const filterSelect = categoryEl.querySelector(`#priority-filter-${category.id}`);
+            if (filterSelect) {
+                filterSelect.value = currentFilter;
+            }
+
+            return categoryEl;
+        }
+
+
+        /**
+         * Master render function. Renders the app state based on the global 'categories' array.
+         */
+        function renderApp() {
+            categoryListContainer.innerHTML = '';
+            
+            if (categories.length > 0) {
+                categories.forEach(category => {
+                    categoryListContainer.appendChild(createCategoryElement(category));
+                });
+            } else {
+                categoryListContainer.innerHTML = `
+                    <div class="text-center p-10 bg-white rounded-xl shadow-xl border-4 border-dashed border-indigo-200">
+                        <p class="text-2xl font-bold text-gray-600 mb-2">Welcome to your Task Board!</p>
+                        <p class="text-lg text-gray-500">No categories found. Use the form above to create your first one.</p>
+                    </div>
+                `;
+            }
+        }
+
+
+        // --- EVENT HANDLERS ---
+        
+        /**
+         * Handle Add Category form submission
+         */
+        function handleAddCategory(e) {
+            e.preventDefault();
+
+            const categoryName = newCategoryNameInput.value.trim();
+            
+            if (categoryName) {
+                const newCategory = {
+                    id: generateId(),
+                    name: categoryName,
+                    tasks: [],
+                    completedTasks: [], 
+                    isCollapsed: false, 
+                    isHistoryCollapsed: true, 
+                    createdAt: Date.now() 
+                };
+                
+                categories.push(newCategory);
+                saveCategories();
+                renderApp();
+
+                newCategoryNameInput.value = '';
+            }
+        }
+
+        /**
+         * Handle Add Task form submission
+         */
+        function handleAddTask(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const categoryEl = form.closest('[data-category-id]');
+            const categoryId = categoryEl.dataset.categoryId;
+            
+            const taskText = form.elements.taskText.value.trim();
+            const taskPrice = form.elements.taskPrice.value;
+            const taskPriority = form.elements.taskPriority.value;
+            const taskDate = form.elements.taskDate.value;
+
+            if (taskText) {
+                const newTask = {
+                    id: generateId(),
+                    text: taskText,
+                    priority: taskPriority,
+                    date: taskDate,
+                    price: taskPrice 
+                };
+
+                const category = categories.find(c => c.id === categoryId);
+                if (category) {
+                    category.tasks.push(newTask);
+                    saveCategories();
+                    renderApp();
+                }
+                form.reset();
+            }
+        }
+        
+        /**
+         * Handle clicks on delete/complete/edit buttons
+         */
+        function handleActionClick(e) {
+            const deleteCategoryBtn = e.target.closest('.delete-category-btn');
+            const completeTaskBtn = e.target.closest('.complete-task-btn');
+            const editTaskBtn = e.target.closest('.edit-task-btn'); // NEW
+
+            // --- Category Deletion ---
+            if (deleteCategoryBtn) {
+                const categoryEl = deleteCategoryBtn.closest('[data-category-id]');
+                if (!categoryEl) return;
+
+                const categoryId = categoryEl.dataset.categoryId;
+                const category = categories.find(c => c.id === categoryId);
+                
+                showModal(
+                    `Delete Category: ${category.name}`,
+                    `Are you sure you want to delete this category and all its tasks? This action cannot be undone.`,
+                    () => {
+                        categories = categories.filter(c => c.id !== categoryId);
+                        saveCategories();
+                        renderApp();
+                    }
+                );
+            }
+
+            // --- Task Completion (Move to History) ---
+            if (completeTaskBtn) {
+                const taskId = completeTaskBtn.dataset.taskIdToComplete; 
+                const categoryEl = completeTaskBtn.closest('[data-category-id]'); 
+                if (!taskId || !categoryEl) return;
+
+                const categoryId = categoryEl.dataset.categoryId;
+                const category = categories.find(c => c.id === categoryId);
+
+                showModal(
+                    "Mark as Completed",
+                    "Are you sure you want to move this task to the Completion History?",
+                    () => {
+                        if (category) {
+                            const taskIndex = category.tasks.findIndex(t => t.id === taskId);
+                            if (taskIndex === -1) return;
+
+                            const completedTask = category.tasks[taskIndex];
+                            
+                            // 1. Remove from active tasks
+                            category.tasks.splice(taskIndex, 1);
+
+                            // 2. Add to completed tasks
+                            category.completedTasks.push(completedTask);
+                            
+                            saveCategories();
                             renderApp();
                         }
-                    );
-                }
-
-                if (deleteTaskBtn) {
-                    const taskEl = deleteTaskBtn.closest('[data-taskId]');
-                    const taskId = taskEl.dataset.taskId;
-                    const categoryEl = deleteTaskBtn.closest('[data-category-id]');
-                    const categoryId = categoryEl.dataset.categoryId;
-
-                    // Find category and filter out the task
-                    const category = state.categories.find(c => c.id === categoryId);
-                    if (category) {
-                        category.tasks = category.tasks.filter(t => t.id !== taskId);
-                        saveState();
-                        renderApp(); // Re-render
                     }
+                );
+            }
+
+            // --- Task Editing (Show Modal) ---
+            if (editTaskBtn) {
+                const taskId = editTaskBtn.dataset.taskIdToEdit;
+                if (!taskId) return;
+
+                const result = findTask(taskId);
+                if (result) {
+                    showEditModal(result.task, result.categoryId);
                 }
             }
+        }
+        
+        /**
+         * Handle category collapse/expand toggle (Updated for single-open accordion behavior)
+         */
+        function handleCollapseToggle(e) {
+            const toggleBtn = e.target.closest('.toggle-collapse-btn');
+            if (!toggleBtn) return;
 
-            /**
-             * Handle filter dropdown change
-             */
-            function handleFilterChange(e) {
-                const categoryId = e.target.dataset.categoryId;
-                const filterValue = e.target.value;
-                state.categoryFilters[categoryId] = filterValue;
-                saveState(); // Save the filter choice
-                renderApp(); // Re-render the app to apply the filter
-            }
+            const toggledCategoryId = toggleBtn.dataset.categoryIdToggle;
+            const toggledCategory = categories.find(c => c.id === toggledCategoryId);
+            
+            if (!toggledCategory) return;
+
+            // 1. Determine the target state for the clicked category
+            const shouldOpen = toggledCategory.isCollapsed;
+
+            // 2. Collapse all other categories
+            categories.forEach(c => {
+                if (c.id !== toggledCategoryId) {
+                    c.isCollapsed = true;
+                }
+            });
+
+            // 3. Toggle the clicked category (open it if it was closed, close it if it was open)
+            toggledCategory.isCollapsed = !toggledCategory.isCollapsed;
+            
+            saveCategories();
+            renderApp();
+        }
+        
+        /**
+         * Handle history section collapse/expand toggle
+         */
+        function handleHistoryToggle(e) {
+            const toggleBtn = e.target.closest('.history-toggle-btn');
+            if (!toggleBtn) return;
+
+            const categoryId = toggleBtn.dataset.categoryIdHistory;
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+            
+            // Toggle the history collapse state (this remains independent)
+            category.isHistoryCollapsed = !category.isHistoryCollapsed;
+            
+            saveCategories();
+            renderApp();
+        }
+
+        /**
+         * Handle filter dropdown change
+         */
+        function handleFilterChange(e) {
+            const categoryId = e.target.dataset.categoryId;
+            const filterValue = e.target.value;
+            categoryFilters[categoryId] = filterValue;
+            
+            // Filter is local state, so just re-render to apply
+            renderApp();
+        }
 
 
-            // --- INITIALIZATION ---
+        // --- INITIALIZATION ---
 
-            function init() {
-                // Attach main event listeners
-                addCategoryForm.addEventListener('submit', handleAddCategory);
-                modalCancelBtn.addEventListener('click', hideModal);
+        function init() {
+            // Attach listener for category form
+            addCategoryForm.addEventListener('submit', handleAddCategory);
+            
+            // Attach listener for download button
+            downloadDataBtn.addEventListener('click', downloadDataAsJson); // NEW LISTENER
 
-                // Use event delegation for dynamic content (tasks and categories)
-                categoryListContainer.addEventListener('submit', (e) => {
-                    if (e.target.classList.contains('add-task-form')) {
-                        handleAddTask(e);
-                    }
-                });
-                
-                categoryListContainer.addEventListener('click', (e) => {
-                    handleDeleteClick(e);
-                });
+            // Use event delegation for dynamic content 
+            categoryListContainer.addEventListener('submit', (e) => {
+                if (e.target.classList.contains('add-task-form')) {
+                    handleAddTask(e);
+                }
+            });
+            
+            categoryListContainer.addEventListener('click', (e) => {
+                handleActionClick(e); 
+                handleCollapseToggle(e);
+                handleHistoryToggle(e); 
+            });
 
-                // Add listener for filter changes
-                categoryListContainer.addEventListener('change', (e) => {
-                    if (e.target.classList.contains('priority-filter-select')) {
-                        handleFilterChange(e);
-                    }
-                });
+            // Add listener for filter changes
+            categoryListContainer.addEventListener('change', (e) => {
+                if (e.target.classList.contains('priority-filter-select')) {
+                    handleFilterChange(e);
+                }
+            });
 
-                // Load initial data and render the app
-                loadState();
-                renderApp();
-            }
+            // Load existing data and render the application
+            loadCategories();
+            renderApp();
+        }
 
-            // Run the app
-            init();
+        // Run the app initialization
+        init();
 
-        });
     </script>
 </body>
 </html>
-
-
